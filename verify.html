@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify Your Email</title>
+    <meta name="description" content="A visually appealing page that prompts users to verify their email address after signing up. It features a clean design with a warm orange and white gradient background.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+    </style>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://aistudiocdn.com/react@^19.1.1/",
+        "react": "https://aistudiocdn.com/react@^19.1.1",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel" data-type="module">
+      import React, { useState, useEffect } from 'react';
+      import ReactDOM from 'react-dom/client';
+
+      const EmailIcon = ({ className }) => {
+        return (
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={className}
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="1.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+        );
+      };
+
+      const App = () => {
+        const [isMounted, setIsMounted] = useState(false);
+
+        useEffect(() => {
+          const timer = setTimeout(() => setIsMounted(true), 100);
+          return () => clearTimeout(timer);
+        }, []);
+
+        return (
+          <main className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-white flex items-center justify-center p-4 font-sans overflow-hidden">
+            <div 
+              className={`
+                relative w-full max-w-md bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl p-8 sm:p-12 text-center transition-all duration-700 ease-out
+                ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+              `}
+            >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-white rounded-full shadow-lg flex items-center justify-center animate-float">
+                <EmailIcon className="w-16 h-16 text-orange-500" />
+              </div>
+
+              <div className="mt-16">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
+                  Please Verify Your Email
+                </h1>
+                <p className="text-gray-600 text-base">
+                  We've sent a verification link to your email address. Please click the link to complete your registration.
+                </p>
+              </div>
+
+              <div className="mt-8 border-t border-gray-200 pt-6">
+                <p className="text-sm text-gray-500">
+                  Didn't receive the email? Check your spam folder or{" "}
+                  <button
+                    onClick={() => alert('A new verification email has been sent!')}
+                    className="font-semibold text-orange-600 hover:text-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded"
+                  >
+                    request a new link
+                  </button>.
+                </p>
+              </div>
+            </div>
+          </main>
+        );
+      };
+
+      const rootElement = document.getElementById('root');
+      if (!rootElement) {
+        throw new Error("Could not find root element to mount to");
+      }
+
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
+  </body>
+</html>
