@@ -27,24 +27,29 @@
         font-family: 'Cairo', sans-serif;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
-  }
-}
-</script>
-</head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+        }
+      }
+    </script>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module">
       import React, { useState, useEffect, useCallback, useRef } from 'react';
       import ReactDOM from 'react-dom/client';
-
-      // --- From types.ts (Cleaned up for profile page) ---
-      // The User interface is defined here, stripped of unused dashboard-related properties.
       
+      // --- Supabase Client Initialization ---
+      const { createClient } = supabase;
+      const supabaseClient = createClient(
+        "https://jxlcchbvawbkmzfigqmd.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bGNjaGJ2YXdia216ZmlncW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0ODA5OTgsImV4cCI6MjA3NDA1Njk5OH0.VBMshOHnWYkdSeDZ6asGwO2CaROp_tgQncQ-EWXF-ho"
+      );
+
       // --- From countries.ts ---
       const countries = [
         "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
@@ -71,17 +76,6 @@
         "Vanuatu", "Vatican City", "Venezuela", "Vietnam",
         "Yemen", "Zambia", "Zimbabwe"
       ];
-      
-      // --- From constants.ts (Cleaned up for profile page) ---
-      const mockUser = {
-        name: "سارة عبدالله",
-        email: "sarah.abdullah@example.com",
-        avatarUrl: "https://picsum.photos/seed/user1/200/200",
-        phone: "+966 55 123 4567",
-        gender: 'female',
-        country: 'Saudi Arabia',
-        dateOfBirth: '1995-08-15',
-      };
 
       // --- From components/ThemeToggle.tsx ---
       const SunIcon = () => (
@@ -122,13 +116,13 @@
           return () => document.removeEventListener('mousedown', handleClickOutside);
         }, []);
 
-        const handleLogout = () => {
-          alert('Logging out...');
-          setIsOpen(false);
+        const handleLogout = async () => {
+          await supabaseClient.auth.signOut();
+          window.location.href = window.location.origin + "/Vionex-/login.html";
         };
         
         const handleSettings = () => {
-          alert('Opening settings...');
+          // Can be implemented in the future
           setIsOpen(false);
         };
 
@@ -199,7 +193,7 @@
       };
 
       // --- From components/MainContent.tsx ---
-      const FormInput = ({ id, label, type = 'text', value, onChange, required = false }) => (
+      const FormInput = ({ id, label, type = 'text', value, onChange, required = false, disabled = false }) => (
         React.createElement('div', null,
           React.createElement('label', { htmlFor: id, className: "block text-sm font-medium text-gray-700 dark:text-gray-300" }, label),
           React.createElement('input', {
@@ -208,8 +202,9 @@
             id: id,
             value: value,
             onChange: onChange,
-            className: "mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-white dark:bg-gray-700 dark:text-white",
-            required: required
+            className: "mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-white dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800",
+            required: required,
+            disabled: disabled,
           })
         )
       );
@@ -240,13 +235,29 @@
           const { name, value } = e.target;
           setFormData(prev => ({ ...prev, [name]: value }));
         };
-
-        const handleSubmit = (e) => {
+        
+        const handleSubmit = async (e) => {
           e.preventDefault();
-          onSave(formData);
-          setIsSaved(true);
-          setTimeout(() => setIsSaved(false), 3000);
+          const { data, error } = await supabaseClient.auth.updateUser({
+              data: {
+                  full_name: formData.name,
+                  phone: formData.phone,
+                  gender: formData.gender,
+                  country: formData.country,
+                  dateOfBirth: formData.dateOfBirth
+              }
+          });
+
+          if (error) {
+              console.error("Error updating user:", error);
+              alert("Failed to save changes: " + error.message);
+          } else {
+              onSave(data.user);
+              setIsSaved(true);
+              setTimeout(() => setIsSaved(false), 3000);
+          }
         };
+
 
         return (
           React.createElement('div', { className: "max-w-4xl mx-auto" },
@@ -268,7 +279,7 @@
                     ),
                     
                     React.createElement(FormInput, { id: "name", label: "Full Name", value: formData.name, onChange: handleChange, required: true }),
-                    React.createElement(FormInput, { id: "email", label: "Email Address", type: "email", value: formData.email, onChange: handleChange, required: true }),
+                    React.createElement(FormInput, { id: "email", label: "Email Address", type: "email", value: formData.email, onChange: handleChange, required: true, disabled: true }),
                     React.createElement(FormInput, { id: "phone", label: "Phone Number", type: "tel", value: formData.phone, onChange: handleChange }),
                     React.createElement(FormInput, { id: "dateOfBirth", label: "Date of Birth", type: "date", value: formData.dateOfBirth, onChange: handleChange }),
                     
@@ -302,8 +313,33 @@
 
       // --- From App.tsx ---
       const App = () => {
-        const [user, setUser] = useState(mockUser);
+        const [user, setUser] = useState(null);
+        const [loading, setLoading] = useState(true);
         const [theme, setTheme] = useState('light');
+
+        useEffect(() => {
+          const checkUser = async () => {
+            const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+            if (error || !user) {
+              window.location.href = window.location.origin + "/Vionex-/login.html";
+            } else {
+              const profileData = {
+                id: user.id,
+                name: user.user_metadata.full_name || user.email.split('@')[0],
+                email: user.email,
+                avatarUrl: user.user_metadata.avatar_url || `https://picsum.photos/seed/${user.id}/200/200`,
+                phone: user.user_metadata.phone || '',
+                gender: user.user_metadata.gender || '',
+                country: user.user_metadata.country || '',
+                dateOfBirth: user.user_metadata.dateOfBirth || '',
+              };
+              setUser(profileData);
+              setLoading(false);
+            }
+          };
+          checkUser();
+        }, []);
 
         useEffect(() => {
           const root = window.document.documentElement;
@@ -316,9 +352,25 @@
         };
 
         const handleUserUpdate = useCallback((updatedUser) => {
-          setUser(updatedUser);
-          console.log("User data updated:", updatedUser);
+            const profileData = {
+                id: updatedUser.id,
+                name: updatedUser.user_metadata.full_name || updatedUser.email.split('@')[0],
+                email: updatedUser.email,
+                avatarUrl: updatedUser.user_metadata.avatar_url || `https://picsum.photos/seed/${updatedUser.id}/200/200`,
+                phone: updatedUser.user_metadata.phone || '',
+                gender: updatedUser.user_metadata.gender || '',
+                country: updatedUser.user_metadata.country || '',
+                dateOfBirth: updatedUser.user_metadata.dateOfBirth || '',
+            };
+            setUser(profileData);
+            console.log("User data updated:", profileData);
         }, []);
+
+        if (loading) {
+          return React.createElement('div', { className: "bg-[#FBECE6] dark:bg-gray-900 min-h-screen flex items-center justify-center" }, 
+            React.createElement('div', { className: "text-lg font-semibold text-gray-800 dark:text-gray-200" }, "Loading Profile...")
+          );
+        }
 
         return (
           React.createElement('div', { className: "bg-[#FBECE6] dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-200 transition-colors duration-300" },

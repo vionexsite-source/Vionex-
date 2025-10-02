@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,6 +8,7 @@
     <title>Verify Your Email</title>
     <meta name="description" content="A visually appealing page that prompts users to verify their email address after signing up. It features a clean design with a warm orange and white gradient background.">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
       @keyframes float {
         0% { transform: translateY(0px); }
@@ -34,6 +36,12 @@
       import React, { useState, useEffect } from 'react';
       import ReactDOM from 'react-dom/client';
 
+      const { createClient } = supabase;
+      const supabaseClient = createClient(
+        "https://jxlcchbvawbkmzfigqmd.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4bGNjaGJ2YXdia216ZmlncW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0ODA5OTgsImV4cCI6MjA3NDA1Njk5OH0.VBMshOHnWYkdSeDZ6asGwO2CaROp_tgQncQ-EWXF-ho"
+      );
+
       const EmailIcon = ({ className }) => {
         return (
           <svg 
@@ -54,10 +62,56 @@
 
       const App = () => {
         const [isMounted, setIsMounted] = useState(false);
+        const [title, setTitle] = useState("Please Verify Your Email");
+        const [message, setMessage] = useState("We're confirming your verification status. Please wait a moment...");
+        const [footerContent, setFooterContent] = useState(null);
+        const [iconColor, setIconColor] = useState('text-orange-500');
 
         useEffect(() => {
-          const timer = setTimeout(() => setIsMounted(true), 100);
-          return () => clearTimeout(timer);
+          const mountTimer = setTimeout(() => setIsMounted(true), 100);
+
+          const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
+            // This event fires when the user clicks the verification link and is successfully signed in.
+            if (event === "SIGNED_IN" && session) {
+              setTitle("Verification Successful!");
+              setMessage("Your email has been verified successfully! Redirecting to the login page...");
+              setIconColor('text-green-500');
+              setFooterContent(null); // Clear footer on success
+              
+              setTimeout(() => {
+                window.location.href = window.location.origin + "/Vionex-/login.html";
+              }, 3000);
+            }
+          });
+          
+          // Fallback timer to handle cases where the auth link is expired, invalid, or already used.
+          const errorTimeout = setTimeout(() => {
+            setTitle(currentTitle => {
+                if (currentTitle === "Please Verify Your Email") { // Only update if still in initial state
+                    setMessage("Could not verify email. The verification link may be invalid or expired.");
+                    setIconColor('text-red-500');
+                    setFooterContent(
+                        <p className="text-sm text-gray-500">
+                            Please return to the{" "}
+                            <a
+                                href={window.location.origin + "/Vionex-/login.html"}
+                                className="font-semibold text-orange-600 hover:text-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded"
+                            >
+                                login page
+                            </a>.
+                        </p>
+                    );
+                    return "Verification Failed";
+                }
+                return currentTitle;
+            });
+          }, 8000); // 8-second timeout
+
+          return () => {
+            clearTimeout(mountTimer);
+            clearTimeout(errorTimeout);
+            subscription.unsubscribe();
+          };
         }, []);
 
         return (
@@ -69,28 +123,20 @@
               `}
             >
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-white rounded-full shadow-lg flex items-center justify-center animate-float">
-                <EmailIcon className="w-16 h-16 text-orange-500" />
+                <EmailIcon className={`w-16 h-16 transition-colors duration-500 ${iconColor}`} />
               </div>
 
               <div className="mt-16">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
-                  Please Verify Your Email
+                  {title}
                 </h1>
                 <p className="text-gray-600 text-base">
-                  We've sent a verification link to your email address. Please click the link to complete your registration.
+                  {message}
                 </p>
               </div>
 
-              <div className="mt-8 border-t border-gray-200 pt-6">
-                <p className="text-sm text-gray-500">
-                  Didn't receive the email? Check your spam folder or{" "}
-                  <button
-                    onClick={() => alert('A new verification email has been sent!')}
-                    className="font-semibold text-orange-600 hover:text-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded"
-                  >
-                    request a new link
-                  </button>.
-                </p>
+              <div className="mt-8 border-t border-gray-200 pt-6 min-h-[42px]">
+                {footerContent}
               </div>
             </div>
           </main>

@@ -28,7 +28,6 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-gray-100">
     <div id="root"></div>
@@ -146,7 +145,7 @@
                     return;
                 }
                 
-                window.location.href = window.location.origin + "/Vionexx/profile.html";
+                window.location.href = window.location.origin + "/Vionex-/profile.html";
             };
             
             const handleGoogleButtonClick = async () => {
@@ -154,7 +153,7 @@
                 const { error } = await supabase.auth.signInWithOAuth({
                     provider: "google",
                     options: {
-                        redirectTo: window.location.origin + "/Vionexx/profile.html"
+                        redirectTo: window.location.origin + "/Vionex-/profile.html"
                     }
                 });
                 if (error) {
@@ -266,7 +265,7 @@
                   </button>
 
                   <p className="text-center text-sm text-gray-600 mt-8">
-                    Don't have an account? <a href="/Vionexx/signup.html" className="font-medium text-orange-600 hover:text-orange-500">Sign up</a>
+                    Don't have an account? <a href="/Vionex-/signup.html" className="font-medium text-orange-600 hover:text-orange-500">Sign up</a>
                   </p>
                 </div>
               </main>
@@ -285,6 +284,5 @@
           </React.StrictMode>
         );
     </script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
